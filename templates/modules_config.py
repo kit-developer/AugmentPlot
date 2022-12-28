@@ -59,11 +59,11 @@ module_info = {
         "projection": "polar"
     },
     "x_color_bar": {
-        "func": pl_common.color_differential,
+        "func": pl_common.color_differential2,
         "require": ["horizontal", "fit_main_w"],
         "iterable": {       # 複数次元データを処理できるか（axes → グラフ複数枠で対応可、data → １つのグラフ内で対応可）
             "frame_max_num": (1, 1),    # (height, width) 上限がない場合は-1
-            "datas_max_dim": (1, ),
+            "datas_max_dim": (2, ),
         },
         "extent": (1, -1),       # 1区画あたりを広げられるか
         "arg_values": {

@@ -18,7 +18,7 @@ def dynamic():
 
         ap.pause_cla(0.01)
 
-    ap.show()
+    # ap.show(legend=False)
 
 
 def static1():
@@ -50,10 +50,37 @@ def static3():
     ap.plot(x, np.log(x), group="log-sin", label="log", l_attribute="log")
     ap.plot(x, np.sin(x), group="log-sin", label="sin", l_attribute="wave")
 
-    ap.plot(x, np.cos(x), group="cos-sin", label="cos", l_attribute="x")
-    ap.plot(x, np.sin(x), group="cos-sin", label="sin", l_attribute="y")
+    ap.plot(x, np.cos(x), group="cos-sin", label="cos", l_attribute="wave")
+    ap.plot(x, np.sin(x), group="cos-sin", label="sin", l_attribute="wave")
 
     ap.show()
+
+
+def dynamic3():
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+
+    ap.add_subplot(2, 2, 1, group="cos-log", g_attribute="2plot")
+    ap.add_subplot(2, 2, 3, group="log-sin", g_attribute="2plot")
+    ap.add_subplot(1, 2, 2, group="cos-sin", g_attribute="1plot")
+
+    x = np.array([0])
+
+    length = 10
+    for i in range(1, 100):
+        x = np.append(x, i)
+        if i >= length:
+            x = x[-length:]
+
+        ap.plot(x, np.cos(x), group="cos-log", label="cos", l_attribute="wave")
+        ap.plot(x, np.log(x), group="cos-log", label="log", l_attribute="log")
+
+        ap.plot(x, np.log(x), group="log-sin", label="log", l_attribute="log")
+        ap.plot(x, np.sin(x), group="log-sin", label="sin", l_attribute="wave")
+
+        ap.plot(x, np.cos(x), group="cos-sin", label="cos", l_attribute="x")
+        ap.plot(x, np.sin(x), group="cos-sin", label="sin", l_attribute="y")
+
+        ap.pause_cla(0.01)
 
 
 def static4():

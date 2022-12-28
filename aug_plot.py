@@ -77,14 +77,14 @@ class AugmentPlot:
             "type": "plot"
         }
 
-    def show(self):
+    def show(self, legend=True):
         if self.initial_setup:
             self.set_subarea()
             self.initial_setup = False
         self.update_subarea()
-        for k, group_ax in self.main_axes.items():
-            group_ax["ax"].legend()
-
+        if legend:
+            for k, group_ax in self.main_axes.items():
+                group_ax["ax"].legend()
         plt.show()
 
     def pause_cla(self, interval=0.01):
@@ -95,7 +95,6 @@ class AugmentPlot:
         for k, group_ax in self.main_axes.items():
             group_ax["ax"].legend(loc='upper right')
         plt.pause(interval)
-        # plt.cla()
         for k, group_ax in self.main_axes.items():
             group_ax["ax"].cla()
         for k, module_ax in self.sub_axes.items():
@@ -114,11 +113,12 @@ class AugmentPlot:
         gs = self.fig.add_gridspec(self.grid[1], self.grid[0])
         modules = construct.construct_sub_area(self.fig, gs,
                                                sub_area_list, self.main_area, custom_area, self.main_axes)
-        # pprint(modules)
+        print("\nfinally sub modules")
+        pprint(modules)
         for module in modules:
-            module[1]["ax"].set_title(module[1]["title"], loc="left", pad=0.5, size=10)
             self.sub_axes[module[0]] = {
                 "property": module[1]["property"],
+                "title": module[1]["title"],
                 "ax": module[1]["ax"]
             }
 
@@ -135,6 +135,7 @@ class AugmentPlot:
                         axis[k].append(self.main_axes[group_name]["labels"][label_name]["axis"][axis_name])
                 ax = prop["func"](axis=axis, values=kwargs["values"], plt_obj={"ax": module["ax"]})
                 module["ax"] = ax
+                module["ax"].set_title(module["title"], loc="left", pad=0.5, size=10)
 
 
 def adjust_fig_size(ax, rate_w, rate_h, offset_rate_l, offset_rate_t, origin_l, origin_t):

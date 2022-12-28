@@ -169,12 +169,17 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
     main_item = module_info["arg_values"]["main_item"]
     values = module_info["arg_values"]["values"]
     # print("\nselection['datasets']", selection["datasets"])
+
+    # 組み合わせ候補の中を順にみていく
     for f, frame_v in enumerate(selection["datasets"]):
         sa_f_args = sliced_areas[f][1]["property"]["args"]
         title_concat = ""
         bf_g_name = None
+        # 枠セットの中を順にみていく
         for data_v in frame_v:
             g_name, l_name = data_v[0], data_v[1]
+
+            # グラフタイトルを作成
             if bf_g_name is None:
                 title_concat += g_name + "/" + l_name
             elif bf_g_name != g_name:
@@ -183,8 +188,8 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
                 title_concat += "," + l_name
             bf_g_name = g_name
 
-            axis = main_axes_info[0]["mini_tree"][g_name]["labels"][l_name]["axis"]
-            m_axes_item = main_axes_info[0]["main_axes"][g_name]["labels"][l_name]["main_item"]
+            axis = main_axes_info[0]["mini_tree"][g_name]["labels"][l_name]["axis"]     # x, y
+            m_axes_item = main_axes_info[0]["main_axes"][g_name]["labels"][l_name]["main_item"]  # xlim等
             for key in axis:
                 d = list(data_v)
                 d.append(key)
@@ -201,6 +206,7 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
                     for k, v in values.items():
                         sa_f_args["values"][k].append(v)
 
+        # サブエリアの位置調整
         x1, y1, x2, y2 = dwm.get_start_and_end_sub(sliced_areas[f])
         sliced_areas[f][1]["ax"] = fig.add_subplot(gs[y1:y2 + 1, x1:x2 + 1], projection=module_info["projection"])
         sliced_areas[f][1]["title"] = title_concat

@@ -6,50 +6,46 @@ from matplotlib.colors import LinearSegmentedColormap
 from tools.common import get_center_axes, get_axes_obj
 
 
-def circle_meter(value, max_value=100, plt_obj=(), colormap=None, gauge_width=100,
-                 text_color="gray", text_size=40, font_family="sans-serif", font_weight="normal"):
-
-    rate = value / max_value
-    norm = mpl.colors.Normalize(0, 2 * np.pi)
-
-    ax, colormap = build_meter(value, colormap, plt_obj, True,
-                               text_color, text_size, font_family, font_weight)
-
-    # インジケーターを作成
-    xval = np.arange(0, rate * 2 * np.pi, 0.01)
-    yval = np.ones_like(xval)
-    ax.scatter(xval, yval, c=xval, s=gauge_width, cmap=colormap, norm=norm, linewidths=0)
-    ax.set_yticks([])
-
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(-1)
-
-    return ax
-
-
-def multi_circle_meter(values, max_value=None, plt_obj=(), colormap=None, gauge_width=100,
+def multi_circle_meter(values, max_value=None, min_value=None, plt_obj=(),
+                       colormap=None, gauge_width=100, activate_negative=False,
                        text_color="gray", text_size=40, font_family="sans-serif", font_weight="normal"):
 
     if max_value is None:
-        max_value = 100
+        max_value = 1
+    if min_value is None:
+        min_value = -1
 
     rates = []
     for i in range(len(values)):
         if hasattr(max_value, "__iter__"):
-            rates.append(values[i] / max_value[i])
+            max_v = max_value[i]
+            min_v = min_value[i]
         else:
-            rates.append(values[i] / max_value)
+            max_v = max_value
+            min_v = min_value
+        if activate_negative:
+            max_v = max_v if values[i] >= 0 else - min_v
+            min_v = 0
+        rate = (values[i] - min_v) / (max_v - min_v) if max_v - min_v != 0 else 0
+        rates.append(rate)
 
     norm = mpl.colors.Normalize(0, 2 * np.pi)
-
     ax, colormap = build_meter("", colormap, plt_obj, False,
                                text_color, text_size, font_family, font_weight)
 
     # インジケーターを作成
     for i, rate in enumerate(rates):
-        xval = np.arange(0, rate * 2 * np.pi, 0.01)
+        pn = rate / abs(rate)
+        if activate_negative:
+            circle_len = 1 * np.pi
+            c_rate = rate / 2 + 0.5
+            cval = np.arange(0.5 * 2 * np.pi, c_rate * 2 * np.pi, 0.01 * pn)
+        else:
+            circle_len = 2 * np.pi
+            cval = np.arange(0, rate * 2 * np.pi, 0.01 * pn)
+        xval = np.arange(0, rate * circle_len, 0.01 * rate / abs(rate))
         yval = np.full_like(xval, 1 + i / len(rates) * 0.5)
-        ax.scatter(xval, yval, c=xval, s=gauge_width, cmap=colormap, norm=norm, linewidths=0)
+        ax.scatter(xval, yval, c=cval, s=gauge_width, cmap=colormap, norm=norm, linewidths=0)
 
     ax.set_yticks([])
     ax.set_ylim(0, 2)
@@ -66,13 +62,8 @@ def sector_meter(value, max_value=100, min_value=0, plt_obj=(), angle=200, color
     ax, colormap = build_meter(value, colormap, plt_obj, True,
                                text_color, text_size, font_family, font_weight)
 
-    if type(value) != str:
-        if max_value - min_value != 0:
-            rate = (value - min_value) / (max_value - min_value)
-        else:
-            rate = 0
-    else:
-        rate = 0
+    rate = (value - min_value) / (max_value - min_value)\
+        if type(value) != str and max_value - min_value != 0 else 0
 
     if shape == "round":
         xval = np.arange(0, rate * 2 * np.pi * angle / 360, 0.01)

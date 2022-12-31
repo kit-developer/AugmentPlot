@@ -14,8 +14,8 @@ def pairing_sub_area_and_data(sub_info, main_axes_info, iterables):
 
     frame_iterate_num, datas_iterate_num = _check_iterate_num(iterables, (sub_info[1]['height'], sub_info[1]['width']))
 
-    print("\nmain_map")
-    print(main_axes_info[1])
+    # print("\nmain_map")
+    # print(main_axes_info[1])
 
     # 枠数をメイン、データ数をサブとして最適な個数をチェック
     # matched_items[検索キー][候補][frame][datas]
@@ -25,8 +25,8 @@ def pairing_sub_area_and_data(sub_info, main_axes_info, iterables):
         check_key, items = _check_num_map(main_axes_info, check_key, iteration)
         matched_items[check_key] = items
 
-    print("\nmatched_items, ", iteration)
-    pprint(matched_items)
+    # print("\nmatched_items, ", iteration)
+    # pprint(matched_items)
 
     # 最適なものを選出
     optimal_datasets = _optimal_items(matched_items, check_num_priority, iteration)

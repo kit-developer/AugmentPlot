@@ -8,7 +8,13 @@ def get_main_axes_map(main_axes, mini_tree=None):
         mini_tree, main_axes = get_mini_tree(main_axes)
     attr_tree_detail, attr_tree = get_attr_tree(mini_tree)
 
-    labels_num = get_labels_num(mini_tree)
+    print("\nmini_tree")
+    pprint(mini_tree)
+
+    print("\nattr_tree")
+    pprint(attr_tree)
+
+    labels_num, labels_num_same_attr = get_labels_num(mini_tree)
     attr_num = get_attr_num(attr_tree)
     attr_tree_r = get_attr_tree_reverse(attr_tree)
     same_l_attr_num, include_l_attr_num = get_same_l_attr(attr_tree, attr_tree_detail)
@@ -22,11 +28,15 @@ def get_main_axes_map(main_axes, mini_tree=None):
 
     main_axes_map = {
         "labels_num": labels_num,
+        "labels_num_same_attr": labels_num_same_attr,
         "attr_num": attr_num,
         "attr_tree_r": attr_tree_r,
         "same_attr_construction": same_l_attr_num,
         "include_attr_construction": include_l_attr_num
     }
+
+    print("\nmain_axes_map")
+    pprint(main_axes_map)
 
     return main_axes_tree, main_axes_map
 
@@ -72,9 +82,14 @@ def get_attr_tree(mini_tree):
 
 def get_labels_num(mini_tree):
     labels_num = {}
+    labels_num_same_attr = {}
     for group_name, group in mini_tree.items():
         labels_num[group_name] = len(group['labels'])
-    return labels_num
+
+        labels_num_same_attr[group_name] = {}
+        l_attrs = [label['l_attribute'] for label in group["labels"].values()]
+        labels_num_same_attr[group_name] = {l_attr: l_attrs.count(l_attr) for l_attr in set(l_attrs)}
+    return labels_num, labels_num_same_attr
 
 
 def get_attr_num(attr_tree):

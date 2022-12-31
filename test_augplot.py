@@ -3,7 +3,8 @@ from aug_plot import AugmentPlot
 
 
 def dynamic():
-    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+                     stylesheet="./original.mplstyle")
     ap.add_subplot(1, 1, 1, group="cos-log")
     x = np.array([0])
 
@@ -22,7 +23,8 @@ def dynamic():
 
 
 def static1():
-    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+                     stylesheet="./original.mplstyle")
 
     ap.add_subplot(1, 1, 1, group="cos-log")
 
@@ -36,7 +38,8 @@ def static1():
 
 def static3():
     # ap = AugmentPlot(grid=(6, 3), main_canvas=((0, 3), (0, 1)))
-    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+                     stylesheet="./original.mplstyle")
 
     ap.add_subplot(2, 2, 1, group="cos-log", g_attribute="2plot")
     ap.add_subplot(2, 2, 3, group="log-sin", g_attribute="2plot")
@@ -57,7 +60,8 @@ def static3():
 
 
 def dynamic3():
-    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+                     stylesheet="./original.mplstyle")
 
     ap.add_subplot(2, 2, 1, group="cos-log", g_attribute="2plot")
     ap.add_subplot(2, 2, 3, group="log-sin", g_attribute="2plot")
@@ -85,7 +89,8 @@ def dynamic3():
 
 def static4():
     # ap = AugmentPlot(grid=(6, 3), main_canvas=((0, 3), (0, 1)))
-    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)))
+    ap = AugmentPlot(grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+                     stylesheet="./original.mplstyle")
 
     ap.add_subplot(2, 2, 1, group="group1(A)", g_attribute="A")
     ap.add_subplot(2, 2, 3, group="group2(A)", g_attribute="A")

@@ -56,8 +56,9 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
         else:
             check_id = 0
 
-        print("\nselection_info")
-        pprint(selection_info)
+        # print("\nselection_info")
+        # pprint(selection_info)
+
         selections.append(selection_info)
 
         if len(others_infos) > 0:

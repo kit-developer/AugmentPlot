@@ -11,7 +11,7 @@ module_info = {
                 "max_num": (1, 1),  # (height, width) 上限がない場合は-1(使用するサブエリアに依存)
                 "priority": None},
             "datas": {
-                "max_dim": (2,),
+                "max_dim": (3,),
                 "priority": None}},
         "extent": (1, 1),  # 1区画あたりを広げられるか
         "arg_values": {
@@ -38,14 +38,14 @@ module_info = {
     },
 
     "x_color_bar": {
-        "func": pl_common.color_differential2,
+        "func": pl_common.color_differential,
         "require": ["horizontal", "fit_main_w"],
         "iterable": {  # 複数次元データを処理できるか（axes → グラフ複数枠で対応可、data → １つのグラフ内で対応可）
             "frame": {
                 "max_num": (1, 1),  # (height, width) 上限がない場合は-1(使用するサブエリアに依存)
                 "priority": None},
             "datas": {
-                "max_dim": (2,),
+                "max_dim": (-1,),
                 "priority": None}},
         "extent": (1, -1),  # 1区画あたりを広げられるか
         "arg_values": {

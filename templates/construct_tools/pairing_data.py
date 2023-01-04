@@ -64,16 +64,18 @@ def _check_iterate_num(iterables, module_config, sub_areas_size):
         iterate_prime = "frame"
     if iterate_prime == "frame":
         over_one = fi_over_one + di_over_one + [1]
+        meta = ["frame"] * len(fi_over_one) + ["datas"] * len(di_over_one) + ["default"]
     else:
         over_one = di_over_one + [1]
+        meta = ["datas"] * len(di_over_one) + ["default"]
 
     if over_one == [1]:
         over_one = [1, 1]
+        meta = ["default", "default"]
 
     iterate_map = {
         "iteration": over_one,
-        "frame_over_one": fi_over_one,
-        "datas_over_one": di_over_one,
+        "meta": meta,
         "iterate_prime": iterate_prime
     }
 
@@ -82,12 +84,15 @@ def _check_iterate_num(iterables, module_config, sub_areas_size):
 
 def _check_num_map(main_axes_info, check_key, iterate_map):
     main_axes_tree, main_axes_map = main_axes_info
+    condition = "same" if iterate_map["iterate_prime"] == "frame" else "less"
     primary_num = iterate_map["iteration"][0]
     items = []
 
     if check_key == "attr_num":
         for l_attr, num in main_axes_map[check_key]["labels"].items():
-            if num == primary_num:
+            if (num == primary_num and condition == "same")\
+                    or (num <= primary_num and condition == "less")\
+                    or primary_num == -1:
                 queries = {"l_attr": [l_attr], "g_attr": []}
                 items = _search_tree(main_axes_tree["mini_tree"], items, queries)
         items, items_shape = _prefix_list_shape(items)
@@ -95,14 +100,18 @@ def _check_num_map(main_axes_info, check_key, iterate_map):
     elif check_key == "attr_tree_r":
         for l_attr, v in main_axes_map[check_key].items():
             for g_attr, num in v.items():
-                if num == primary_num:
+                if (num == primary_num and condition == "same") \
+                        or (num <= primary_num and condition == "less") \
+                        or primary_num == -1:
                     queries = {"l_attr": [l_attr], "g_attr": [g_attr]}
                     items = _search_tree(main_axes_tree["mini_tree"], items, queries)
         items, items_shape = _prefix_list_shape(items)
 
     elif check_key == "labels_num":
         for g_name, num in main_axes_map[check_key].items():
-            if num == primary_num:
+            if (num == primary_num and condition == "same")\
+                    or (num <= primary_num and condition == "less")\
+                    or primary_num == -1:
                 queries = {"g_name": [g_name]}
                 items = _search_tree(main_axes_tree["mini_tree"], items, queries)
         items = _reshape(items, order=(0, 2, 1)) if items != [] else []
@@ -110,14 +119,19 @@ def _check_num_map(main_axes_info, check_key, iterate_map):
     elif check_key == "include_attr_construction":
         for g_attr, v in main_axes_map[check_key].items():
             for l_attr_set, num in v.items():
-                if num == primary_num:
+                if (num == primary_num and condition == "same") \
+                        or (num <= primary_num and condition == "less") \
+                        or primary_num == -1:
                     queries = {"l_attr": list(l_attr_set), "g_attr": [g_attr]}
                     items = _search_tree(main_axes_tree["mini_tree"], items, queries)
 
     elif check_key == "same_attr_construction":
         for g_attr, v in main_axes_map[check_key].items():
             for l_attr_set, info in v.items():
-                if info["num"] == primary_num:
+                num = info["num"]
+                if (num == primary_num and condition == "same") \
+                        or (num <= primary_num and condition == "less") \
+                        or primary_num == -1:
                     queries = {"l_attr": list(l_attr_set), "g_attr": [g_attr], "g_name": info["group"]}
                     items = _search_tree(main_axes_tree["mini_tree"], items, queries)
 
@@ -216,17 +230,36 @@ def _optimal_items(matched_items, check_num_priority, iterate_map):
     ref = ["frame", "datas"].index(iterate_map['iterate_prime']) + 1
     dim_num = len(iterate_map['iteration'])
 
+    print("---")
+
     selected_key = None
     matched_dim = -1
     for check_key in check_num_priority:
 
         if len(matched_items[check_key]) != 0:
             shape = list_size(matched_items[check_key])
+
+            print(check_key, matched_dim)
+            print(shape)
+            print(iterate_map['iteration'])
+            print(iterate_map['meta'])
+
             for i in range(dim_num):
-                if shape[ref:ref + dim_num + 1][i] != iterate_map['iteration'][i] or i <= matched_dim:
-                    break
+                if iterate_map['meta'][i] == "frame":
+                    if shape[ref:ref + dim_num + 1][i] != iterate_map['iteration'][i] or i < matched_dim:
+                        break
+                elif iterate_map['meta'][i] == "datas":
+                    if (shape[ref:ref + dim_num + 1][i] > iterate_map['iteration'][i] or i < matched_dim) and \
+                            iterate_map['iteration'][i] != -1:
+                        break
+                else:
+                    if shape[ref:ref + dim_num + 1][i] != iterate_map['iteration'][i] or i < matched_dim:
+                        break
                 matched_dim = i
                 selected_key = check_key
+
+    print(selected_key)
+    print("----")
 
     optimal_datasets = matched_items[selected_key][0] if selected_key is not None else None
     return optimal_datasets

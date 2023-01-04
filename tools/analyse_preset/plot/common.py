@@ -41,28 +41,6 @@ def last_differential_meter(axis, plt_obj, values=()):
 
 
 def color_differential(axis, plt_obj, values=()):
-    x, y = axis["x"][0], axis["y"][0]
-    xlim = get_value(values, "xlim")[0]
-    dim = get_value(values, "dim", default=2)
-
-    np_x = np.array(x)
-    np_y = np.array(y)
-    diff_x = np.diff(np_x)
-    for i in range(dim):
-        np_y = np.diff(np_y) / diff_x
-        diff_x = np.array([diff_x[j] + diff_x[j+1] for j in range(len(diff_x)-1)])
-
-    if len(np_y) < 1 or np_y[-1] == np.inf:
-        img = np.zeros((100, 4))
-    else:
-        img = heatmap.color_bar_horizontal(np_x[:-dim], np_y, xlim)
-    ax = get_axes_obj(plt_obj)
-    ax.imshow(img, aspect='auto')
-
-    return ax
-
-
-def color_differential2(axis, plt_obj, values=()):
 
     tape_width = 3
     gap_width = 1

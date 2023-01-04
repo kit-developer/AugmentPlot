@@ -5,6 +5,7 @@ from pprint import pprint
 from templates.construct_tools import divide_with_main as dwm
 from templates.construct_tools import slice_area
 from templates.construct_tools import pairing_data as pd
+from tools.common import list_size, deep_process_list
 
 
 def sub_area_selections(sub_div_unit, main_axes_info, module_info):
@@ -23,7 +24,7 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
     check_id = 0
     others_infos = []
     while True:
-        # 各サブエリアが適用可能なモジュールのリストを作成する
+        # 各サブエリアが適用可能なモジュールのリストを作成する（ここではconfigのrequireを確認するのみ）
         focus_combination, check_id = _module_request(sliced_combinations, check_id, module_info)
         next_action, selection_info = "", None
 
@@ -36,7 +37,8 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
             for selected_module_name, iterables in focus_combination["satisfied_modules"].items():
 
                 # どのデータを使うか、サブエリアを分割する必要があるか、main_axes_infoを使って決定
-                optimal_datasets, iteration = pd.pairing_sub_area_and_data(approved_info, main_axes_info, iterables)
+                optimal_datasets, iteration = pd.pairing_sub_area_and_data(approved_info, main_axes_info,
+                                                                           module_info[selected_module_name], iterables)
 
                 same_construction = any([selected_module_name == s["module_name"]
                                          and optimal_datasets == s["datasets"]
@@ -56,8 +58,9 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
         else:
             check_id = 0
 
-        # print("\nselection_info")
-        # pprint(selection_info)
+        print("\nselection_info")
+        pprint(selection_info)
+        print("\n-------------------------\n")
 
         selections.append(selection_info)
 
@@ -96,8 +99,8 @@ def _check_module_request(sub_info, module_info):
     # 適用できそうなモジュールを順番にチェックしていく
     for module_name, info in module_info.items():
 
-        iterable_frame = info['iterable']['frame_max_num']
-        iterable_datas = info['iterable']['datas_max_dim']
+        iterable_frame = info['iterable']['frame']['max_num']
+        iterable_datas = info['iterable']['datas']['max_dim']
         sub_areas_size = (sub_info[1]['height'], sub_info[1]['width'])
 
         feature_satisfied = all([required_feat in sub_info[1]['feature'] for required_feat in info["require"]])
@@ -165,52 +168,56 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
     }
 
     # sub_areaのスライス
-    sliced_areas = _disassemble(sub_area, selection['iteration'])
+    sliced_areas = _disassemble(sub_area, selection['iteration']['iteration'])
 
     main_item = module_info["arg_values"]["main_item"]
     values = module_info["arg_values"]["values"]
-    # print("\nselection['datasets']", selection["datasets"])
 
     # 組み合わせ候補の中を順にみていく
     for f, frame_v in enumerate(selection["datasets"]):
         sa_f_args = sliced_areas[f][1]["property"]["args"]
-        title_concat = ""
-        bf_g_name = None
+        layer_name_map = {}
         # 枠セットの中を順にみていく
         for data_v in frame_v:
-            g_name, l_name = data_v[0], data_v[1]
-
-            # グラフタイトルを作成
-            if bf_g_name is None:
-                title_concat += g_name + "/" + l_name
-            elif bf_g_name != g_name:
-                title_concat += " " + g_name + "/" + l_name
+            data_v_shape = list_size(data_v)
+            if data_v_shape:
+                ret = deep_process_list(data_v, lambda **kwargs: list(kwargs["arg"]["depth"]))
             else:
-                title_concat += "," + l_name
-            bf_g_name = g_name
+                ret = {"lasts": [list(data_v)]}
 
-            axis = main_axes_info[0]["mini_tree"][g_name]["labels"][l_name]["axis"]     # x, y
-            m_axes_item = main_axes_info[0]["main_axes"][g_name]["labels"][l_name]["main_item"]  # xlim等
-            for key in axis:
-                d = list(data_v)
-                d.append(key)
-                if key not in sa_f_args["axis"]:
-                    sa_f_args["axis"][key] = [d]
-                    for mi in main_item:
-                        sa_f_args["values"][mi] = [m_axes_item[mi]]
-                    for k, v in values.items():
-                        sa_f_args["values"][k] = [v]
+            for d_v in ret["lasts"]:
+                g_name, l_name = d_v[0], d_v[1]
+                if g_name not in layer_name_map:
+                    layer_name_map[g_name] = [l_name]
                 else:
-                    sa_f_args["axis"][key].append(d)
-                    for mi in main_item:
-                        sa_f_args["values"][mi].append(m_axes_item[mi])
-                    for k, v in values.items():
-                        sa_f_args["values"][k].append(v)
+                    layer_name_map[g_name].append(l_name)
+
+                axis = main_axes_info[0]["mini_tree"][g_name]["labels"][l_name]["axis"]     # x, y
+                m_axes_item = main_axes_info[0]["main_axes"][g_name]["labels"][l_name]["main_item"]  # xlim等
+                for key in axis:
+                    d = list(d_v)
+                    d.append(key)
+                    if key not in sa_f_args["axis"]:
+                        sa_f_args["axis"][key] = [d]
+                        for mi in main_item:
+                            sa_f_args["values"][mi] = [m_axes_item[mi]]
+                        for k, v in values.items():
+                            sa_f_args["values"][k] = [v]
+                    else:
+                        sa_f_args["axis"][key].append(d)
+                        for mi in main_item:
+                            sa_f_args["values"][mi].append(m_axes_item[mi])
+                        for k, v in values.items():
+                            sa_f_args["values"][k].append(v)
 
         # サブエリアの位置調整
         x1, y1, x2, y2 = dwm.get_start_and_end_sub(sliced_areas[f])
         sliced_areas[f][1]["ax"] = fig.add_subplot(gs[y1:y2 + 1, x1:x2 + 1], projection=module_info["projection"])
-        sliced_areas[f][1]["title"] = title_concat
+
+        title_concat = ""
+        for g_name, l_names in layer_name_map.items():
+            title_concat += " " + g_name + "/" + ", ".join(l_names)
+        sliced_areas[f][1]["title"] = title_concat[1:]
 
     return sliced_areas
 

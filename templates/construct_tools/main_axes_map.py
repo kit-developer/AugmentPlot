@@ -8,11 +8,11 @@ def get_main_axes_map(main_axes, mini_tree=None):
         mini_tree, main_axes = get_mini_tree(main_axes)
     attr_tree_detail, attr_tree = get_attr_tree(mini_tree)
 
-    print("\nmini_tree")
-    pprint(mini_tree)
-
-    print("\nattr_tree")
-    pprint(attr_tree)
+    # print("\nmini_tree")
+    # pprint(mini_tree)
+    #
+    # print("\nattr_tree")
+    # pprint(attr_tree)
 
     labels_num, labels_num_same_attr = get_labels_num(mini_tree)
     attr_num = get_attr_num(attr_tree)
@@ -26,6 +26,7 @@ def get_main_axes_map(main_axes, mini_tree=None):
         "attr_tree": attr_tree,
     }
 
+    # 追記する場合はparing_data.pyの_check_num_mapにも追加
     main_axes_map = {
         "labels_num": labels_num,
         "labels_num_same_attr": labels_num_same_attr,
@@ -35,8 +36,8 @@ def get_main_axes_map(main_axes, mini_tree=None):
         "include_attr_construction": include_l_attr_num
     }
 
-    print("\nmain_axes_map")
-    pprint(main_axes_map)
+    # print("\nmain_axes_map")
+    # pprint(main_axes_map)
 
     return main_axes_tree, main_axes_map
 

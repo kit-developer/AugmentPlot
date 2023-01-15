@@ -8,7 +8,7 @@ from templates.construct_tools import pairing_data as pd
 from tools.common import list_size, deep_process_list
 
 
-def sub_area_selections(sub_div_unit, main_axes_info, module_info):
+def sub_area_selections(sub_div_unit, main_axes_info, module_info, module_priority=None):
 
     selections = []
 
@@ -25,7 +25,7 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
     others_infos = []
     while True:
         # 各サブエリアが適用可能なモジュールのリストを作成する（ここではconfigのrequireを確認するのみ）
-        focus_combination, check_id = _module_request(sliced_combinations, check_id, module_info)
+        focus_combination, check_id = _module_request(sliced_combinations, check_id, module_info, module_priority)
         next_action, selection_info = "", None
 
         # 当てはまるモジュールが存在する場合
@@ -48,12 +48,18 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
                                                               same_construction, selected_module_name,
                                                               approved_info, optimal_datasets, iteration)
 
+                print("\nframe combination checked_____________in selection")
+                print("result |", selection_info['debug_message'])
+                print("detail |", selection_info['sub_info'][0],
+                      "height :", selection_info['sub_info'][1]['height'],
+                      "width :", selection_info['sub_info'][1]['width'])
+
                 if next_action != "more_select_module":
                     break
         else:
             selection_info, next_action = _selection_info(False, sliced_combinations)
 
-        if next_action == "more_module_request":
+        if next_action == "more_module_request" or next_action == "more_select_module":
             continue
         else:
             check_id = 0
@@ -77,9 +83,9 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info):
     return selections
 
 
-def _module_request(sliced_combinations, check_id, module_info):
+def _module_request(sliced_combinations, check_id, module_info, module_priority=None):
     for sc_i in range(check_id, len(sliced_combinations)):
-        request_satisfied_modules = _check_module_request(sliced_combinations[sc_i]["focus"], module_info)
+        request_satisfied_modules = _check_module_request(sliced_combinations[sc_i]["focus"], module_info, module_priority)
 
         # sliced_sub_infoのfocusに要件を満たすモジュールがまったくない場合は次へ進む
         if len(request_satisfied_modules) > 0:
@@ -92,12 +98,17 @@ def _module_request(sliced_combinations, check_id, module_info):
     return None, 0
 
 
-def _check_module_request(sub_info, module_info):
+def _check_module_request(sub_info, module_info, module_priority=None):
 
     request_satisfied_modules = {}
 
+    if module_priority is None:
+        module_priority = list(module_info.keys())
+
     # 適用できそうなモジュールを順番にチェックしていく
-    for module_name, info in module_info.items():
+    for module_name in module_priority:
+
+        info = module_info[module_name]
 
         iterable_frame = info['iterable']['frame']['max_num']
         iterable_datas = info['iterable']['datas']['max_dim']
@@ -168,7 +179,7 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
     }
 
     # sub_areaのスライス
-    sliced_areas = _disassemble(sub_area, selection['iteration']['iteration'])
+    sliced_areas = _disassemble(sub_area, selection['iteration']['f_height-width'])
 
     main_item = module_info["arg_values"]["main_item"]
     values = module_info["arg_values"]["values"]
@@ -181,11 +192,11 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
         for data_v in frame_v:
             data_v_shape = list_size(data_v)
             if data_v_shape:
-                ret = deep_process_list(data_v, lambda **kwargs: list(kwargs["arg"]["depth"]))
+                ret = deep_process_list(data_v, leaf_action=lambda **kwargs: list(kwargs["element"]))["leaves"]
             else:
-                ret = {"lasts": [list(data_v)]}
+                ret = [list(data_v)]
 
-            for d_v in ret["lasts"]:
+            for d_v in ret:
                 g_name, l_name = d_v[0], d_v[1]
                 if g_name not in layer_name_map:
                     layer_name_map[g_name] = [l_name]
@@ -216,7 +227,7 @@ def set_property(selection, main_axes_info, module_info, fig, gs):
 
         title_concat = ""
         for g_name, l_names in layer_name_map.items():
-            title_concat += " " + g_name + "/" + ", ".join(l_names)
+            title_concat += "  " + g_name + "/ " + ", ".join(l_names)
         sliced_areas[f][1]["title"] = title_concat[1:]
 
     return sliced_areas

@@ -1,11 +1,10 @@
 import sys
 from pprint import pprint
 
-from tools.common import list_size
+from tools.common import list_size, distorted_list_max_size
 
 
 def pairing_sub_area_and_data(sub_info, main_axes_info, module_config, iterables):
-
     # print("pairing_sub_area_and_data sub_info", sub_info[0])
     # print(module_config)
 
@@ -26,7 +25,6 @@ def pairing_sub_area_and_data(sub_info, main_axes_info, module_config, iterables
 
 
 def _check_iterate_num(iterables, module_config, sub_areas_size):
-
     iterate_prime = None
     if "priority" in module_config["iterable"]["frame"]:
         if module_config["iterable"]["frame"]["priority"] is not None:
@@ -74,7 +72,8 @@ def _check_iterate_num(iterables, module_config, sub_areas_size):
         meta = ["default", "default"]
 
     iterate_map = {
-        "iteration": over_one,
+        "frame-data": over_one,
+        "f_height-width": frame_iteration,
         "meta": meta,
         "iterate_prime": iterate_prime
     }
@@ -85,13 +84,13 @@ def _check_iterate_num(iterables, module_config, sub_areas_size):
 def _check_num_map(main_axes_info, check_key, iterate_map):
     main_axes_tree, main_axes_map = main_axes_info
     condition = "same" if iterate_map["iterate_prime"] == "frame" else "less"
-    primary_num = iterate_map["iteration"][0]
+    primary_num = iterate_map["frame-data"][0]
     items = []
 
     if check_key == "attr_num":
         for l_attr, num in main_axes_map[check_key]["labels"].items():
-            if (num == primary_num and condition == "same")\
-                    or (num <= primary_num and condition == "less")\
+            if (num == primary_num and condition == "same") \
+                    or (num <= primary_num and condition == "less") \
                     or primary_num == -1:
                 queries = {"l_attr": [l_attr], "g_attr": []}
                 items = _search_tree(main_axes_tree["mini_tree"], items, queries)
@@ -109,11 +108,12 @@ def _check_num_map(main_axes_info, check_key, iterate_map):
 
     elif check_key == "labels_num":
         for g_name, num in main_axes_map[check_key].items():
-            if (num == primary_num and condition == "same")\
-                    or (num <= primary_num and condition == "less")\
+            if (num == primary_num and condition == "same") \
+                    or (num <= primary_num and condition == "less") \
                     or primary_num == -1:
                 queries = {"g_name": [g_name]}
                 items = _search_tree(main_axes_tree["mini_tree"], items, queries)
+        items = _select_with_secondary_num(items, iterate_map["frame-data"][1], iterate_map["iterate_prime"])
         items = _reshape(items, order=(0, 2, 1)) if items != [] else []
 
     elif check_key == "include_attr_construction":
@@ -135,7 +135,13 @@ def _check_num_map(main_axes_info, check_key, iterate_map):
                     queries = {"l_attr": list(l_attr_set), "g_attr": [g_attr], "g_name": info["group"]}
                     items = _search_tree(main_axes_tree["mini_tree"], items, queries)
 
-    items, items_shape = _fix_list_shape_data_iteration(items, iterate_map)
+    items = _select_with_secondary_num(items, iterate_map["frame-data"][1], iterate_map["iterate_prime"])
+
+    try:
+        items, items_shape = _fix_list_shape_data_iteration(items, iterate_map)
+    except:
+        raise Exception("error occurred with :" + check_key)
+
     return check_key, items
 
 
@@ -164,7 +170,7 @@ def _search_tree(mini_tree, items, queries):
 
 
 def _prefix_list_shape(items):
-    items_shape = list_size(items)
+    items_shape = distorted_list_max_size(items)
     if len(items_shape) > 0:
         _i = items_shape[0]
         _j = items_shape[1]
@@ -177,15 +183,39 @@ def _prefix_list_shape(items):
                     new_sets.extend(groups)
                 for j, path in enumerate(new_sets):
                     new_items[i][j] = [tuple(path)]
+                new_items[i] = [ni for ni in new_items[i] if ni != []]
         items = new_items
         items_shape = list_size(items)
     return items, items_shape
 
 
-def _fix_list_shape_data_iteration(items, iterate_map):
+def _select_with_secondary_num(items, secondary_num, iterate_prime):
+    if not items:
+        return items
+    secondaries = []
+    data_nums_len = []
+    for candidate in items:
+        data_nums = [len(primaries) for primaries in candidate if len(primaries) != 0]
+        data_nums_len.append(len(data_nums))
+        if iterate_prime == "frame" and data_nums.count(data_nums[0]) != len(data_nums):
+            raise Exception("primary_numと異なる検索結果が混じっている可能性があります。" + str(data_nums))
+        secondaries.append(data_nums[0])
+    if iterate_prime == "datas":
+        idx = data_nums_len.index(max(data_nums_len))
+    else:
+        if secondary_num in secondaries:
+            idx = secondaries.index(secondary_num)
+        elif secondary_num == -1:
+            idx = secondaries.index(max(secondaries))
+        else:
+            idx = 0
+    items = [items[idx]]
+    return items
 
+
+def _fix_list_shape_data_iteration(items, iterate_map):
     items_shape = list_size(items)
-    secondary = iterate_map['iteration'][1]
+    secondary = iterate_map['frame-data'][1]
 
     if len(items_shape) > 0 and secondary > 1:
         if items_shape[2] != secondary and items_shape[0] == secondary:
@@ -220,17 +250,25 @@ def _reshape(items, order, prime="frame"):
                 if prime == "frame":
                     new_items[access[0]][access[1]][access[2]] = items[i][j][k]
                 else:
-                    new_items[access[0]][0][access[1]][access[2]] = items[i][j][k]
+                    try:
+                        new_items[access[0]][0][access[1]][access[2]] = items[i][j][k]
+                    except:
+                        print("items")
+                        print(i, j, k)
+                        print(list_size(items))
+                        pprint(items, width=200)
+                        print("new_items")
+                        print(access)
+                        print(list_size(new_items))
+                        pprint(new_items, width=200)
+                        raise Exception()
     return new_items
 
 
 # 各matched_itemsから、最適なものを選択する
 def _optimal_items(matched_items, check_num_priority, iterate_map):
-
     ref = ["frame", "datas"].index(iterate_map['iterate_prime']) + 1
-    dim_num = len(iterate_map['iteration'])
-
-    print("---")
+    dim_num = len(iterate_map['frame-data'])
 
     selected_key = None
     matched_dim = -1
@@ -239,27 +277,19 @@ def _optimal_items(matched_items, check_num_priority, iterate_map):
         if len(matched_items[check_key]) != 0:
             shape = list_size(matched_items[check_key])
 
-            print(check_key, matched_dim)
-            print(shape)
-            print(iterate_map['iteration'])
-            print(iterate_map['meta'])
-
             for i in range(dim_num):
                 if iterate_map['meta'][i] == "frame":
-                    if shape[ref:ref + dim_num + 1][i] != iterate_map['iteration'][i] or i < matched_dim:
+                    if shape[ref:ref + dim_num + 1][i] != iterate_map['frame-data'][i] or i < matched_dim:
                         break
                 elif iterate_map['meta'][i] == "datas":
-                    if (shape[ref:ref + dim_num + 1][i] > iterate_map['iteration'][i] or i < matched_dim) and \
-                            iterate_map['iteration'][i] != -1:
+                    if (shape[ref:ref + dim_num + 1][i] > iterate_map['frame-data'][i] or i < matched_dim)\
+                            and iterate_map['frame-data'][i] != -1:
                         break
                 else:
-                    if shape[ref:ref + dim_num + 1][i] != iterate_map['iteration'][i] or i < matched_dim:
+                    if shape[ref:ref + dim_num + 1][i] != iterate_map['frame-data'][i] or i < matched_dim:
                         break
                 matched_dim = i
                 selected_key = check_key
-
-    print(selected_key)
-    print("----")
 
     optimal_datasets = matched_items[selected_key][0] if selected_key is not None else None
     return optimal_datasets

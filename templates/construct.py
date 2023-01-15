@@ -6,7 +6,7 @@ np.set_printoptions(threshold=99, edgeitems=1)
 from templates.construct_tools import divide_with_main as dwm
 from templates.construct_tools import selection as sel
 from templates.construct_tools import main_axes_map as mam
-from templates.modules_config import module_info
+from templates.modules_config import module_info, module_priority
 
 
 def construct_sub_area(fig, gs, sub_area_list, main_area, custom_area, main_axes):
@@ -20,18 +20,18 @@ def construct_sub_area(fig, gs, sub_area_list, main_area, custom_area, main_axes
     # pprint(sub_div_info)
 
     # サブエリアを構成
-    modules = _confirming_sub_modules(fig, gs, main_axes_info, sub_div_info, module_info)
+    modules = _confirming_sub_modules(fig, gs, main_axes_info, sub_div_info, module_info, module_priority)
 
     # カスタムエリアを構成
 
     return modules
 
 
-def _confirming_sub_modules(fig, gs, main_axes_info, sub_div_info, module_info):
+def _confirming_sub_modules(fig, gs, main_axes_info, sub_div_info, module_info, module_priority):
 
     selections = []
     for sub_div_unit in sub_div_info:
-        selections.extend(sel.sub_area_selections(sub_div_unit, main_axes_info, module_info))
+        selections.extend(sel.sub_area_selections(sub_div_unit, main_axes_info, module_info, module_priority))
 
     sub_areas = []
     for selection in selections:

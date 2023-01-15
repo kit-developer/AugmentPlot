@@ -12,11 +12,12 @@ from templates import construct
 # 仕様
 # 折れ線グラフ
 class AugmentPlot:
-    def __init__(self, figsize=(12, 7), grid=(5, 3), main_canvas=((0, 3), (0, 1)),
+    def __init__(self, figsize=(15, 9), grid=(5, 3), main_canvas=((0, 3), (0, 1)),
                  stylesheet="D:\PycharmProjects\AugmentPlot\original.mplstyle"):
 
         plt.style.use(stylesheet)
         self.fig = plt.figure(figsize=figsize)
+        self.title_color = plt.rcParams.get('axes.titlecolor')
 
         # メインキャンバスの位置を整理
         gs = self.fig.add_gridspec(grid[1], grid[0])
@@ -51,7 +52,7 @@ class AugmentPlot:
         self.main_axes[group] = {"ax": ax, "g_attribute": g_attribute, "labels": {}, "projection": projection}
 
     # 折れ線
-    def plot(self, x, y, group=None, label=None, l_attribute=np.NAN):
+    def plot(self, x, y, group=None, label=None, l_attribute=np.NAN, style=None):
         if group not in self.main_axes:
             if self.last_group is not None:
                 group = self.last_group
@@ -61,8 +62,13 @@ class AugmentPlot:
 
         self.last_group = group
         ax = self.main_axes[group]["ax"]
-        ax.plot(x, y, label=label)
-        ax.set_title(group, loc="left", pad=0.1, size=10)
+        if style is None:
+            ax.plot(x, y, label=label)
+        elif style == "grad":
+            from tools.chart.plot import plot_gradation
+            ax = plot_gradation(x, y, plt_obj={"ax": ax}, label=label)
+        else:
+            raise ValueError("指定されたstyleが正しくありません")
 
         self.main_axes[group]["labels"][label] = {
             "axis": {
@@ -82,9 +88,10 @@ class AugmentPlot:
             self.set_subarea()
             self.initial_setup = False
         self.update_subarea()
-        if legend:
-            for k, group_ax in self.main_axes.items():
-                group_ax["ax"].legend()
+        for group_name, group_ax in self.main_axes.items():
+            ax_title(group_ax["ax"], group_name, self.title_color)
+            if legend:
+                group_ax["ax"].legend(loc='upper right')
         plt.show()
 
     def pause_cla(self, interval=0.01):
@@ -92,8 +99,9 @@ class AugmentPlot:
             self.set_subarea()
             self.initial_setup = False
         self.update_subarea()
-        for k, group_ax in self.main_axes.items():
+        for group_name, group_ax in self.main_axes.items():
             group_ax["ax"].legend(loc='upper right')
+            ax_title(group_ax["ax"], group_name, self.title_color)
         plt.pause(interval)
         for k, group_ax in self.main_axes.items():
             group_ax["ax"].cla()
@@ -119,6 +127,7 @@ class AugmentPlot:
             self.sub_axes[module[0]] = {
                 "property": module[1]["property"],
                 "title": module[1]["title"],
+                "module_name": module[1]["property"]["module"],
                 "ax": module[1]["ax"]
             }
 
@@ -133,9 +142,12 @@ class AugmentPlot:
                     for v in vs:
                         group_name, label_name, axis_name = v
                         axis[k].append(self.main_axes[group_name]["labels"][label_name]["axis"][axis_name])
-                ax = prop["func"](axis=axis, values=kwargs["values"], plt_obj={"ax": module["ax"]})
+                labels = [g_l[0] + "/" + g_l[1] for g_l in list(kwargs["axis"].values())[0]]
+                ax = prop["func"](axis=axis, values=kwargs["values"], plt_obj={"ax": module["ax"]}, labels=labels)
                 module["ax"] = ax
-                module["ax"].set_title(module["title"], loc="left", pad=0.5, size=10)
+
+                ax_title(module["ax"], module["module_name"], self.title_color)
+                ax_subtitle(module["ax"], "  " + module["title"], self.title_color)
 
 
 def adjust_fig_size(ax, rate_w, rate_h, offset_rate_l, offset_rate_t, origin_l, origin_t):
@@ -153,3 +165,13 @@ def adjust_fig_size(ax, rate_w, rate_h, offset_rate_l, offset_rate_t, origin_l, 
     return ax
 
 
+def ax_title(ax, title, color):
+    width, height, from_left, from_top = get_size_axes(ax)
+    h_offset = 0.01 / height
+    ax.text(0, 1 + h_offset, title, color=color, ha='left', transform=ax.transAxes, fontsize=10)
+
+
+def ax_subtitle(ax, title, color):
+    width, height, from_left, from_top = get_size_axes(ax)
+    h_offset = - 0.01 / height
+    ax.text(0, 1 + h_offset, title, color=color, ha='left', transform=ax.transAxes, fontsize=8)

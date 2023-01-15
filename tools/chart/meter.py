@@ -26,7 +26,7 @@ def multi_circle_meter(values, max_value=None, min_value=None, plt_obj=(),
         if activate_negative:
             max_v = max_v if values[i] >= 0 else - min_v
             min_v = 0
-        rate = (values[i] - min_v) / (max_v - min_v) if max_v - min_v != 0 else 0
+        rate = (values[i] - min_v) / (max_v - min_v) if max_v - min_v != 0 else np.finfo(np.float32).eps
         rates.append(rate)
 
     norm = mpl.colors.Normalize(0, 2 * np.pi)
@@ -44,7 +44,7 @@ def multi_circle_meter(values, max_value=None, min_value=None, plt_obj=(),
             circle_len = 2 * np.pi
             cval = np.arange(0, rate * 2 * np.pi, 0.01 * pn)
         xval = np.arange(0, rate * circle_len, 0.01 * rate / abs(rate))
-        yval = np.full_like(xval, 1 + i / len(rates) * 0.5)
+        yval = np.full_like(xval, 1 + i / len(rates) * 0.7)
         ax.scatter(xval, yval, c=cval, s=gauge_width, cmap=colormap, norm=norm, linewidths=0)
 
     ax.set_yticks([])

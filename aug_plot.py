@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from tools.block_handler import block_handle
-from tools.common import get_size_axes
-from tools.analyse_preset.plot import common
+from tools.common import ax_title, get_size_axes
 from templates import construct
 
 
@@ -142,12 +141,15 @@ class AugmentPlot:
                     for v in vs:
                         group_name, label_name, axis_name = v
                         axis[k].append(self.main_axes[group_name]["labels"][label_name]["axis"][axis_name])
+                titles = {
+                    "main": {
+                        "text": module["module_name"], "color": self.title_color},
+                    "sub": {
+                        "text": "  " + module["title"], "color": self.title_color}
+                }
                 labels = [g_l[0] + "/" + g_l[1] for g_l in list(kwargs["axis"].values())[0]]
-                ax = prop["func"](axis=axis, values=kwargs["values"], plt_obj={"ax": module["ax"]}, labels=labels)
+                ax = prop["func"](axis=axis, values=kwargs["values"], plt_obj={"ax": module["ax"]}, titles=titles, labels=labels)
                 module["ax"] = ax
-
-                ax_title(module["ax"], module["module_name"], self.title_color)
-                ax_subtitle(module["ax"], "  " + module["title"], self.title_color)
 
 
 def adjust_fig_size(ax, rate_w, rate_h, offset_rate_l, offset_rate_t, origin_l, origin_t):
@@ -163,15 +165,3 @@ def adjust_fig_size(ax, rate_w, rate_h, offset_rate_l, offset_rate_t, origin_l, 
 
     ax.set_position([new_l, new_b, new_w, new_h])
     return ax
-
-
-def ax_title(ax, title, color):
-    width, height, from_left, from_top = get_size_axes(ax)
-    h_offset = 0.01 / height
-    ax.text(0, 1 + h_offset, title, color=color, ha='left', transform=ax.transAxes, fontsize=10)
-
-
-def ax_subtitle(ax, title, color):
-    width, height, from_left, from_top = get_size_axes(ax)
-    h_offset = - 0.01 / height
-    ax.text(0, 1 + h_offset, title, color=color, ha='left', transform=ax.transAxes, fontsize=8)

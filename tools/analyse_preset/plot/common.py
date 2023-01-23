@@ -5,8 +5,8 @@ import copy
 from scipy import interpolate
 from matplotlib.colors import LinearSegmentedColormap
 
-from tools.chart import meter, heatmap, bar
-from tools.common import get_axes_obj, get_value
+from tools.chart import meter, heatmap, bar, rader
+from tools.common import ax_title, ax_subtitle, get_size_axes, get_axes_obj, get_value
 
 
 # 最新の値
@@ -21,6 +21,35 @@ def last_value_meter(**kwargs):
     min_v = [np.min(datas) * (1 + max_min_offset) for datas in axis["y"]]
     ax = meter.multi_circle_meter(ys, plt_obj=plt_obj, max_value=max_v, min_value=min_v, activate_negative=True,
                                   gauge_width=80)
+
+    ax_title(ax, kwargs["titles"]["main"]["text"], kwargs["titles"]["main"]["color"])
+    ax_subtitle(ax, kwargs["titles"]["sub"]["text"], kwargs["titles"]["sub"]["color"])
+
+    return ax
+
+
+# 最新の値のレーダーチャート
+def last_value_rader(**kwargs):
+
+    axis = kwargs["axis"]
+    plt_obj = kwargs["plt_obj"]
+
+    max_min_offset = 0
+    ys = [datas[-1] for datas in axis["y"]]
+    max_v = max([np.max(datas) * (1 + max_min_offset) for datas in axis["y"]])
+    min_v = min([np.min(datas) * (1 + max_min_offset) for datas in axis["y"]])
+
+    ticks = np.round(np.linspace(min_v, max_v, 4), decimals=2)
+    ax = rader.rader(ys, ticks=ticks, plt_obj=plt_obj)
+
+    # グラフ位置のオフセット
+    width, height, from_left, from_top = get_size_axes(ax)
+    # h_offset = height * 0.2 if len(ys) % 2 == 1 else 0
+    h_offset = height * (1 - (1 - np.cos(int(len(ys)/2) / len(ys) * 2 * np.pi)) / 2)
+    ax.set_position([from_left, 1 - (from_top + height) - h_offset, width, height])
+
+    ax_title(ax, kwargs["titles"]["main"]["text"], kwargs["titles"]["main"]["color"], h_offset)
+    ax_subtitle(ax, kwargs["titles"]["sub"]["text"], kwargs["titles"]["sub"]["color"], h_offset)
 
     return ax
 
@@ -48,6 +77,14 @@ def last_differential_meter(**kwargs):
         max_v = np.max(np_y)
         min_v = np.min(np_y)
         ax = meter.sector_meter(round(np_y[-1], 1), max_value=max_v, min_value=min_v, plt_obj=plt_obj, shape="round")
+
+    # width, height, from_left, from_top = get_size_axes(ax)
+    # h_offset = height * 0.2
+    # ax.set_position([from_left, 1 - (from_top + height) - h_offset, width, height])
+
+    ax_title(ax, kwargs["titles"]["main"]["text"], kwargs["titles"]["main"]["color"])
+    ax_subtitle(ax, kwargs["titles"]["sub"]["text"], kwargs["titles"]["sub"]["color"])
+
     return ax
 
 
@@ -85,6 +122,9 @@ def color_differential(**kwargs):
 
     ax = get_axes_obj(plt_obj)
     ax.imshow(img, aspect='auto')
+
+    ax_title(ax, kwargs["titles"]["main"]["text"], kwargs["titles"]["main"]["color"])
+    ax_subtitle(ax, kwargs["titles"]["sub"]["text"], kwargs["titles"]["sub"]["color"])
 
     return ax
 
@@ -133,4 +173,8 @@ def frequency(**kwargs):
         else:
             ax.plot(freq[1:int(sn/2)], amp[1:int(sn/2)], label=label)
             ax.legend(loc='upper right', fontsize=8)
+
+    ax_title(ax, kwargs["titles"]["main"]["text"], kwargs["titles"]["main"]["color"])
+    ax_subtitle(ax, kwargs["titles"]["sub"]["text"], kwargs["titles"]["sub"]["color"])
+
     return ax

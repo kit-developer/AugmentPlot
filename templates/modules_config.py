@@ -2,6 +2,7 @@ from tools.analyse_preset.plot import common as pl_common
 
 
 module_priority = [
+    "1_rader",
     "1_frequency",
     "1_meter",
     "1_meter_diff",
@@ -22,6 +23,24 @@ module_info = {
                 "priority": None},
             "datas": {
                 "max_dim": (3,),
+                "priority": None}},
+        "extent": (1, 1),  # 1区画あたりを広げられるか
+        "arg_values": {
+            "main_item": [],
+            "values": {}},
+        "projection": "polar"
+    },
+
+    "1_rader": {
+        "func": pl_common.last_value_rader,
+        "require": ["square"],
+        "iterable": {  # 複数次元データを処理できるか（axes → グラフ複数枠で対応可、data → １つのグラフ内で対応可）
+            "frame": {
+                "max_num": (1, 1),  # (height, width) 上限がない場合は-1(使用するサブエリアに依存)
+                "priority": None},
+            "datas": {
+                "max_dim": (8, 3),
+                "min_dim": (3, -1),
                 "priority": None}},
         "extent": (1, 1),  # 1区画あたりを広げられるか
         "arg_values": {

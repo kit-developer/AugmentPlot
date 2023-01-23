@@ -49,12 +49,20 @@ def static3():
 
     ap.plot(x, np.cos(x), group="cos-log", label="cos", l_attribute="wave", style="grad")
     ap.plot(x, np.log(x), group="cos-log", label="log", l_attribute="log", style="grad")
+    ap.plot(x, np.cos(x) + 1, group="cos-log", label="cos2", l_attribute="wave", style="grad")
+    ap.plot(x, np.log(x) - 1, group="cos-log", label="log2", l_attribute="log", style="grad")
 
-    ap.plot(x, np.log(x), group="log-sin", label="log", l_attribute="x", style="grad")
+    ap.plot(x, np.log(x), group="log-sin", label="log", l_attribute="log", style="grad")
     ap.plot(x, np.sin(x), group="log-sin", label="sin", l_attribute="wave", style="grad")
+    ap.plot(x, np.log(x) - 1, group="log-sin", label="log2", l_attribute="log", style="grad")
+    ap.plot(x, np.sin(x) + 1, group="log-sin", label="sin2", l_attribute="wave", style="grad")
 
     ap.plot(x, np.cos(x), group="cos-sin", label="cos", l_attribute="wave", style="grad")
+    # ap.plot(x, np.cos(x) + 1, group="cos-sin", label="cos2", l_attribute="wave", style="grad")
+    # ap.plot(x, np.sin(x) + 1, group="cos-sin", label="sin2", l_attribute="wave", style="grad")
+    # ap.plot(x, np.log(x) - 1, group="cos-sin", label="log2", l_attribute="wave", style="grad")
     ap.plot(x, np.sin(x), group="cos-sin", label="sin", l_attribute="wave", style="grad")
+    # ap.plot(x, np.log(x), group="cos-sin", label="log", l_attribute="wave", style="grad")
 
     ap.show()
 

@@ -34,11 +34,10 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info, module_priori
             others_infos.extend(focus_combination["combination"]["others"])
 
             # satisfied_modulesを見ていく
-            for selected_module_name, iterables in focus_combination["satisfied_modules"].items():
+            for selected_module_name in focus_combination["satisfied_modules"]:
 
                 # どのデータを使うか、サブエリアを分割する必要があるか、main_axes_infoを使って決定
-                optimal_datasets, iteration = pd.pairing_sub_area_and_data(approved_info, main_axes_info,
-                                                                           module_info[selected_module_name], iterables)
+                optimal_datasets, iteration = pd.pairing_sub_area_and_data(approved_info, main_axes_info, module_info[selected_module_name])
 
                 same_construction = any([selected_module_name == s["module_name"]
                                          and optimal_datasets == s["datasets"]
@@ -50,9 +49,10 @@ def sub_area_selections(sub_div_unit, main_axes_info, module_info, module_priori
 
                 print("\nframe combination checked_____________in selection")
                 print("result |", selection_info['debug_message'])
-                print("detail |", selection_info['sub_info'][0],
-                      "height :", selection_info['sub_info'][1]['height'],
-                      "width :", selection_info['sub_info'][1]['width'])
+                if len(selection_info['sub_info']) != 0:
+                    print("detail |", selection_info['sub_info'][0],
+                          "height :", selection_info['sub_info'][1]['height'],
+                          "width :", selection_info['sub_info'][1]['width'])
 
                 if next_action != "more_select_module":
                     break
@@ -100,7 +100,7 @@ def _module_request(sliced_combinations, check_id, module_info, module_priority=
 
 def _check_module_request(sub_info, module_info, module_priority=None):
 
-    request_satisfied_modules = {}
+    request_satisfied_modules = []
 
     if module_priority is None:
         module_priority = list(module_info.keys())
@@ -109,22 +109,39 @@ def _check_module_request(sub_info, module_info, module_priority=None):
     for module_name in module_priority:
 
         info = module_info[module_name]
-
-        iterable_frame = info['iterable']['frame']['max_num']
-        iterable_datas = info['iterable']['datas']['max_dim']
-        sub_areas_size = (sub_info[1]['height'], sub_info[1]['width'])
-
         feature_satisfied = all([required_feat in sub_info[1]['feature'] for required_feat in info["require"]])
-        frame_size_satisfied = all([(sub_areas_size[i] > 1 and
-                                     (iterable_frame[i] == -1 or iterable_frame[i] == sub_areas_size[i]))
-                                    or (info['extent'][i] == -1 or sub_areas_size[i] == 1)
-                                    for i in range(2)])
 
-        if feature_satisfied and frame_size_satisfied:
-            request_satisfied_modules[module_name] = {
-                "iterable_frame": iterable_frame,
-                "iterable_datas": iterable_datas,
-            }
+        # iterable_frame_max = info['iterable']['frame']['max_num'] if 'max_num' in info['iterable']['frame'] else -1
+        # iterable_frame_min = info['iterable']['frame']['min_num'] if 'max_num' in info['iterable']['frame'] else -1
+        # sub_areas_size = (sub_info[1]['height'], sub_info[1]['width'])
+        # frame_size_satisfied = all([
+        #     # 与えられたサイズ > 1に対して、モジュールの繰り返し可能数が-1 or 繰り返し可能数と一致
+        #     (sub_areas_size[i] > 1 and (iterable_frame_max[i] == -1 or iterable_frame[i] == sub_areas_size[i]))
+        #     or
+        #     # 与えられたサイズ > 1に対して、モジュールの繰り返し可能数が-1 or 繰り返し可能数と一致
+        #     (info['extent'][i] == -1 or sub_areas_size[i] == 1)
+        #     for i in range(2)])
+
+        frame_size_satisfied = [False, False]
+        for i, key in enumerate(["height", "width"]):
+            iterable_frame_max = info['iterable']['frame']['max_num'][i] if 'max_num' in info['iterable']['frame'] else -1
+            iterable_frame_min = info['iterable']['frame']['min_num'][i] if 'min_num' in info['iterable']['frame'] else -1
+            extent = info['extent'][i] if 'extent' in info else 1
+            sub_areas_size = sub_info[1][key]
+
+            # 引き伸ばし可能の場合
+            if extent == -1:
+                frame_size_satisfied[i] = True
+            elif sub_areas_size == 1:
+                if iterable_frame_min == -1 or iterable_frame_min == 0:
+                    frame_size_satisfied[i] = True
+            else:
+                if iterable_frame_min == -1 or iterable_frame_min <= sub_areas_size:
+                    if iterable_frame_max == -1 or sub_areas_size <= iterable_frame_max:
+                        frame_size_satisfied[i] = True
+
+        if feature_satisfied and all(frame_size_satisfied):
+            request_satisfied_modules.append(module_name)
 
     return request_satisfied_modules
 
@@ -155,11 +172,12 @@ def _selection_info(request_satisfy, sliced_combinations,
                 selection_info["iteration"] = iteration
                 next_action = "check_others_sub_area"
             else:
-                selection_info["debug_message"] = "no_fit_data"
+                selection_info["debug_message"] = "no_fit_data (optimal_datasets is None)"
                 selection_info["sub_info"] = approved_info
                 next_action = "more_select_module"
         else:
             # same_construction
+            selection_info["debug_message"] = "same_construction_is_found"
             next_action = "more_module_request"
     else:
         selection_info["debug_message"] = "no_request_satisfied_modules"

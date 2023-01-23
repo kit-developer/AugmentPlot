@@ -2,6 +2,18 @@ from pprint import pprint
 from matplotlib import pyplot as plt
 
 
+def ax_title(ax, title, color, h_offset=0):
+    width, height, from_left, from_top = get_size_axes(ax)
+    h_ofs = (h_offset + 0.01) / height
+    ax.text(0, 1 + h_ofs, title, color=color, ha='left', transform=ax.transAxes, fontsize=10)
+
+
+def ax_subtitle(ax, title, color, h_offset=0):
+    width, height, from_left, from_top = get_size_axes(ax)
+    h_ofs = (h_offset - 0.01) / height
+    ax.text(0, 1 + h_ofs, title, color=color, ha='left', transform=ax.transAxes, fontsize=8)
+
+
 def get_size_axes(ax):
     width = abs(ax.get_position().x1 - ax.get_position().x0)
     height = abs(ax.get_position().y1 - ax.get_position().y0)
@@ -50,6 +62,22 @@ def get_axes_obj(plt_obj, polar=False):
     return ax
 
 
+class PltObjManager:
+
+    def __init__(self):
+        self.labels = {}
+
+    def set_label(self, ax, label=None):
+        ax_id = id(ax)
+        if ax_id not in self.labels:
+            self.labels[ax_id] = [label]
+        else:
+            if label not in self.labels[ax_id] or label is None:
+                self.labels[ax_id].append(label)
+        label_last_id = [i for i, x in enumerate(self.labels[ax_id]) if x == label][-1]
+        return label_last_id
+
+
 def list_size(items):
     items_shape = []
     layer = items
@@ -69,66 +97,6 @@ def distorted_list_max_size(items):
     else:
         ret = []
     return ret
-
-
-# def deep_process_dict(obj, action):
-#
-#     status_map = {}
-#     map_focus = status_map
-#     p_v = obj
-#     layer = []
-#
-#     while True:
-#
-#         if isinstance(p_v, dict):
-#
-#             do_continue = False
-#             for c_k in p_v.keys():
-#                 if c_k not in map_focus:
-#                     map_focus[c_k] = {"_STATUS": "yet", "_MAP": {}}
-#                     focus_c_k = c_k
-#                 else:
-#                     if map_focus[c_k]["_STATUS"] == "yet":
-#                         focus_c_k = c_k
-#                     elif map_focus[c_k]["_STATUS"] == "focus":
-#                         focus_c_k = c_k
-#                         layer.append(focus_c_k)
-#                         map_focus = map_focus[focus_c_k]["_MAP"]
-#                         p_v = p_v[focus_c_k]
-#                         do_continue = True
-#             if do_continue:
-#                 continue
-#
-#             if all([map_focus[c_k]["_STATUS"] == "ok" or map_focus[c_k]["_STATUS"] == "checked"
-#                     for c_k in p_v.keys()]):
-#                 if len(layer) <= 1:
-#                     break
-#                 map = status_map[layer[0]]['_MAP']
-#                 for i in range(1, len(layer)):
-#                     if i == len(layer)-1:
-#                         map[layer[i]]['_STATUS'] = "checked"
-#                     map = map[layer[i]]['_MAP']
-#                 map_focus = status_map
-#                 p_v = obj
-#                 layer = []
-#                 continue
-#
-#             if isinstance(p_v[focus_c_k], dict):
-#                 layer.append(focus_c_k)
-#                 map_focus[focus_c_k]["_STATUS"] = "focus"
-#                 map_focus = map_focus[focus_c_k]["_MAP"]
-#                 p_v = p_v[focus_c_k]
-#             else:
-#                 map_focus[focus_c_k]["_STATUS"] = "ok"
-#                 path = ""
-#                 path += layer[0]
-#                 for u in layer[1:]:
-#                     path += "/" + str(u).replace('/', '_')
-#                 path += "/" + str(focus_c_k).replace('/', '_')
-#                 action()
-#
-#         else:
-#             break
 
 
 def deep_process_list(obj, leaf_action=None, branch_action=None, layer_action=None):
